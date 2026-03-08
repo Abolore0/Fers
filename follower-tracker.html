@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FOLLOWER TRACKER</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Syne+Mono&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#020408;--surface:rgba(255,255,255,0.03);--border:rgba(255,255,255,0.08);
+    --neon-x:#00f5ff;--neon-ig:#ff2d78;--neon-fb:#4f8fff;
+    --text:#f0f4ff;--muted:rgba(240,244,255,0.4);
+  }
+  body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;padding:0 20px 100px}
+
+  .bg-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,245,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.03) 1px,transparent 1px);background-size:60px 60px;animation:gridShift 20s linear infinite}
+  .bg-glow{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 80% 40% at 20% 10%,rgba(0,245,255,0.08) 0%,transparent 70%),radial-gradient(ellipse 60% 40% at 80% 80%,rgba(255,45,120,0.08) 0%,transparent 70%);animation:glowPulse 8s ease-in-out infinite alternate}
+  @keyframes gridShift{from{background-position:0 0,0 0}to{background-position:60px 60px,60px 60px}}
+  @keyframes glowPulse{from{opacity:.7}to{opacity:1.3}}
+
+  .particles{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .particle{position:absolute;width:2px;height:2px;border-radius:50%;animation:floatUp linear infinite;opacity:0}
+  @keyframes floatUp{0%{transform:translateY(100vh);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-10vh);opacity:0}}
+
+  header{position:relative;z-index:10;text-align:center;padding:70px 0 50px;animation:fadeDown .8s cubic-bezier(.16,1,.3,1) both}
+  .logo-tag{display:inline-block;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.25em;color:var(--neon-x);text-transform:uppercase;border:1px solid var(--neon-x);padding:4px 14px;border-radius:99px;margin-bottom:20px;animation:tagPulse 2s ease infinite alternate}
+  @keyframes tagPulse{from{box-shadow:0 0 10px rgba(0,245,255,.2)}to{box-shadow:0 0 30px rgba(0,245,255,.7)}}
+  header h1{font-size:clamp(40px,8vw,80px);font-weight:800;letter-spacing:-.04em;line-height:1;background:linear-gradient(135deg,#fff 0%,var(--neon-x) 50%,var(--neon-ig) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 30px rgba(0,245,255,.4));margin-bottom:12px}
+  header p{color:var(--muted);font-size:15px}
+
+  .card{position:relative;z-index:10;width:100%;max-width:620px;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px;backdrop-filter:blur(20px);margin-bottom:20px}
+  .card::before{content:'';position:absolute;inset:0;border-radius:24px;padding:1px;background:linear-gradient(135deg,rgba(0,245,255,.25),rgba(255,45,120,.25),rgba(79,143,255,.25));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+
+  .config-toggle-btn{width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;cursor:pointer;font-family:'Syne',sans-serif;color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:0;transition:color .2s}
+  .config-toggle-btn:hover{color:var(--text)}
+  .chevron{transition:transform .3s}
+  .chevron.open{transform:rotate(180deg)}
+  .config-fields{display:grid;gap:14px;margin-top:20px;overflow:hidden;max-height:0;transition:max-height .4s ease,opacity .3s;opacity:0}
+  .config-fields.open{max-height:700px;opacity:1}
+
+  .field-wrap label{display:block;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .field-wrap input{width:100%;font-family:'Syne Mono',monospace;font-size:12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+  .field-wrap input:focus{border-color:var(--neon-x);box-shadow:0 0 12px rgba(0,245,255,.15)}
+  .field-note{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5}
+  .field-note a{color:var(--neon-x);text-decoration:none}
+  .field-note a:hover{text-decoration:underline}
+
+  .tabs{display:flex;gap:8px;margin-bottom:24px}
+  .tab-btn{flex:1;padding:11px 0;border-radius:12px;border:1px solid var(--border);background:transparent;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;cursor:pointer;color:var(--muted);transition:all .25s;display:flex;align-items:center;justify-content:center;gap:7px;text-transform:uppercase}
+  .tab-btn:hover{border-color:rgba(255,255,255,.3);color:var(--text)}
+  .tab-btn.ax{background:rgba(0,245,255,.1);border-color:var(--neon-x);color:var(--neon-x);box-shadow:0 0 20px rgba(0,245,255,.2)}
+  .tab-btn.ai{background:rgba(255,45,120,.1);border-color:var(--neon-ig);color:var(--neon-ig);box-shadow:0 0 20px rgba(255,45,120,.2)}
+  .tab-btn.af{background:rgba(79,143,255,.1);border-color:var(--neon-fb);color:var(--neon-fb);box-shadow:0 0 20px rgba(79,143,255,.2)}
+  .tab-btn svg{width:14px;height:14px;fill:currentColor;flex-shrink:0}
+
+  .input-label{display:block;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .url-input{width:100%;font-family:'Syne Mono',monospace;font-size:14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:15px 18px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:18px}
+  .url-input::placeholder{color:rgba(240,244,255,.2)}
+  .url-input:focus{border-color:var(--neon-x);box-shadow:0 0 0 3px rgba(0,245,255,.08),0 0 20px rgba(0,245,255,.1)}
+
+  .go-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--neon-x),#0088ff);border:none;border-radius:14px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#000;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(0,245,255,.3);display:flex;align-items:center;justify-content:center;gap:10px}
+  .go-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,245,255,.5)}
+  .go-btn:active{transform:translateY(0)}
+  .go-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+  .spinner{width:18px;height:18px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;display:none}
+  .spinner.show{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .results-wrap{position:relative;z-index:10;width:100%;max-width:620px;display:grid;gap:16px}
+  .result-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 32px;backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-between;gap:16px;animation:popIn .5s cubic-bezier(.16,1,.3,1) both;position:relative;overflow:hidden}
+  .result-card::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(transparent 0deg,rgba(255,255,255,.015) 60deg,transparent 120deg);animation:spin 8s linear infinite;pointer-events:none}
+  .result-card.xc{border-color:rgba(0,245,255,.25);box-shadow:0 0 40px rgba(0,245,255,.06)}
+  .result-card.ic{border-color:rgba(255,45,120,.25);box-shadow:0 0 40px rgba(255,45,120,.06)}
+  .result-card.fc{border-color:rgba(79,143,255,.25);box-shadow:0 0 40px rgba(79,143,255,.06)}
+  .result-card.ec{border-color:rgba(255,80,80,.3);background:rgba(255,30,30,.04)}
+
+  .result-left{display:flex;align-items:center;gap:16px;position:relative;z-index:1}
+  .plat-icon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .plat-icon.xi{background:#000;box-shadow:0 0 20px rgba(0,245,255,.4)}
+  .plat-icon.igi{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);box-shadow:0 0 20px rgba(255,45,120,.4)}
+  .plat-icon.fbi{background:#1877f2;box-shadow:0 0 20px rgba(79,143,255,.4)}
+  .plat-icon svg{width:22px;height:22px;fill:white}
+  .result-meta h3{font-size:16px;font-weight:700;margin-bottom:3px}
+  .result-meta .handle{font-family:'Syne Mono',monospace;font-size:12px;color:var(--muted)}
+
+  .result-right{text-align:right;position:relative;z-index:1}
+  .count-num{font-family:'Syne Mono',monospace;font-size:clamp(28px,5vw,38px);font-weight:700;line-height:1;letter-spacing:-.03em;background:linear-gradient(135deg,#fff,var(--neon-x));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 10px rgba(0,245,255,.5));animation:countUp .6s ease both}
+  .count-num.in{background:linear-gradient(135deg,#fff,var(--neon-ig));-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 10px rgba(255,45,120,.5))}
+  .count-num.fn{background:linear-gradient(135deg,#fff,var(--neon-fb));-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 10px rgba(79,143,255,.5))}
+  .count-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .error-txt{font-size:13px;color:#ff6b6b;max-width:220px;text-align:right;line-height:1.5}
+
+  .skel{border-radius:6px;background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite}
+  .skel-c{width:110px;height:36px;margin-left:auto}
+  .skel-l{width:60px;height:11px;margin:6px 0 0 auto}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  .note-bar{position:relative;z-index:10;width:100%;max-width:620px;font-size:11px;color:var(--muted);text-align:center;line-height:1.8;margin-top:4px;margin-bottom:24px}
+
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes popIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  @keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="particles" id="pts"></div>
+
+<header>
+  <div class="logo-tag">✦ Social Analytics</div>
+  <h1>FOLLOWER<br/>TRACKER</h1>
+  <p>Real-time follower counts — powered by official APIs</p>
+</header>
+
+<!-- API CONFIG -->
+<div class="card" style="animation:fadeDown .6s .1s cubic-bezier(.16,1,.3,1) both">
+  <button class="config-toggle-btn" onclick="toggleCfg()">
+    <span>🔑 &nbsp;API Configuration</span>
+    <span class="chevron" id="chev">▼</span>
+  </button>
+  <div class="config-fields" id="cfg">
+
+    <div class="field-wrap">
+      <label>X / Twitter Bearer Token</label>
+      <input type="password" id="xt" placeholder="AAAAAAAAAAAAAAAAAAAAAxxxxxxxx"/>
+      <div class="field-note">
+        Get free at <a href="https://developer.twitter.com" target="_blank">developer.twitter.com</a> →
+        Create App → Keys &amp; Tokens → Bearer Token
+      </div>
+    </div>
+
+    <div class="field-wrap">
+      <label>Instagram Graph API Access Token</label>
+      <input type="password" id="it" placeholder="EAAxxxxxxxx"/>
+      <div class="field-note">
+        <a href="https://developers.facebook.com/tools/explorer/" target="_blank">Meta Graph Explorer</a> →
+        Add <code>instagram_basic</code> + Business Discovery API enabled. Account must be Business/Creator.
+      </div>
+    </div>
+
+    <div class="field-wrap">
+      <label>Facebook Page Access Token</label>
+      <input type="password" id="ft" placeholder="EAAxxxxxxxx"/>
+      <div class="field-note">
+        <a href="https://developers.facebook.com/tools/explorer/" target="_blank">Graph Explorer</a> →
+        Select Page → <code>pages_read_engagement</code> permission → Generate Token
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SEARCH -->
+<div class="card" style="animation:fadeDown .6s .2s cubic-bezier(.16,1,.3,1) both">
+  <div class="tabs">
+    <button class="tab-btn ax" id="tab-x" onclick="switchTab('x')">
+      <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      X / Twitter
+    </button>
+    <button class="tab-btn" id="tab-instagram" onclick="switchTab('instagram')">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      Instagram
+    </button>
+    <button class="tab-btn" id="tab-facebook" onclick="switchTab('facebook')">
+      <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      Facebook
+    </button>
+  </div>
+
+  <label class="input-label" id="inp-lbl">X / Twitter Profile URL or Username</label>
+  <input class="url-input" id="url-in" type="text" placeholder="https://x.com/username  or  @username"/>
+  <button class="go-btn" id="go-btn" onclick="doFetch()">
+    <span id="btn-txt">⚡ Fetch Followers</span>
+    <span class="spinner" id="spin"></span>
+  </button>
+</div>
+
+<p class="note-bar">
+  API keys stay in your browser only — never stored externally.<br/>
+  CORS is bypassed server-side via the Claude API proxy.
+</p>
+
+<div class="results-wrap" id="results"></div>
+
+<script>
+// Particles
+(()=>{
+  const c=document.getElementById('pts');
+  const cols=['#00f5ff','#ff2d78','#4f8fff','#ffe066'];
+  for(let i=0;i<28;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.cssText=`left:${Math.random()*100}%;width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;background:${cols[i%cols.length]};animation-duration:${Math.random()*15+10}s;animation-delay:${Math.random()*15}s`;
+    c.appendChild(p);
+  }
+})();
+
+let plat='x';
+const phs={x:'https://x.com/username  or  @username',instagram:'https://instagram.com/username  or  @username',facebook:'Facebook page ID or page URL'};
+const lbls={x:'X / Twitter Profile URL or Username',instagram:'Instagram Profile URL or Username',facebook:'Facebook Page URL or Page ID'};
+const tabCls={x:'ax',instagram:'ai',facebook:'af'};
+const icons={
+  x:`<svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
+  instagram:`<svg viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>`,
+  facebook:`<svg viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`
+};
+const iCls={x:'xi',instagram:'igi',facebook:'fbi'};
+const cCls={x:'xc',instagram:'ic',facebook:'fc'};
+const nCls={x:'',instagram:'in',facebook:'fn'};
+const pLbl={x:'X / Twitter',instagram:'Instagram',facebook:'Facebook'};
+
+function toggleCfg(){
+  document.getElementById('cfg').classList.toggle('open');
+  document.getElementById('chev').classList.toggle('open');
+}
+
+function switchTab(p){
+  plat=p;
+  ['x','instagram','facebook'].forEach(t=>{
+    const el=document.getElementById('tab-'+t);
+    el.className='tab-btn'+(t===p?' '+tabCls[p]:'');
+  });
+  document.getElementById('inp-lbl').textContent=lbls[p];
+  document.getElementById('url-in').placeholder=phs[p];
+  document.getElementById('url-in').value='';
+  document.getElementById('results').innerHTML='';
+}
+
+function extractUser(raw,p){
+  raw=raw.trim().replace(/\/$/,'').replace(/^@/,'');
+  const m=raw.match({x:/(?:twitter\.com|x\.com)\/([A-Za-z0-9_]+)/,instagram:/instagram\.com\/([A-Za-z0-9_.]+)/,facebook:/facebook\.com\/([A-Za-z0-9_.]+)/}[p]);
+  if(m) return m[1];
+  if(/^[A-Za-z0-9_.]+$/.test(raw)) return raw;
+  return null;
+}
+
+function fmt(n){
+  if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'')+'M';
+  if(n>=1e3) return (n/1e3).toFixed(1).replace(/\.0$/,'')+'K';
+  return n.toLocaleString();
+}
+
+function showSkel(u){
+  document.getElementById('results').innerHTML=`
+    <div class="result-card ${cCls[plat]}">
+      <div class="result-left">
+        <div class="plat-icon ${iCls[plat]}">${icons[plat]}</div>
+        <div class="result-meta"><h3>${pLbl[plat]}</h3><div class="handle">@${u}</div></div>
+      </div>
+      <div class="result-right"><div class="skel skel-c"></div><div class="skel skel-l"></div></div>
+    </div>`;
+}
+
+function showResult(u,count,err){
+  const right=err
+    ?`<div class="error-txt">${err}</div>`
+    :`<div class="count-num ${nCls[plat]}">${fmt(count)}</div><div class="count-label">Followers</div>`;
+  document.getElementById('results').innerHTML=`
+    <div class="result-card ${err?'ec':cCls[plat]}">
+      <div class="result-left">
+        <div class="plat-icon ${iCls[plat]}">${icons[plat]}</div>
+        <div class="result-meta"><h3>${pLbl[plat]}</h3><div class="handle">@${u}</div></div>
+      </div>
+      <div class="result-right">${right}</div>
+    </div>`;
+}
+
+async function callAPI(url, headers) {
+  // Use Claude API as a server-side proxy to bypass browser CORS restrictions
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      system: 'You are an API proxy. Make the HTTP GET request described by the user using web_search or direct fetch, extract the follower count, and respond ONLY with valid JSON: {"success":true,"followers":NUMBER} or {"success":false,"error":"MESSAGE"}. No markdown, no extra text.',
+      messages:[{role:'user',content:`Make a GET request to: ${url}\nWith headers: ${JSON.stringify(headers)}\nExtract and return the follower/subscriber count as JSON.`}],
+      tools:[{type:'web_search_20250305',name:'web_search'}]
+    })
+  });
+  if(!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+  const data=await res.json();
+  const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+  const clean=text.replace(/```json|```/g,'').trim();
+  return JSON.parse(clean);
+}
+
+async function doFetch(){
+  const raw=document.getElementById('url-in').value.trim();
+  if(!raw) return;
+  const user=extractUser(raw,plat);
+  if(!user){showResult(raw.slice(0,20),null,'Cannot parse username from input.');return}
+
+  const btn=document.getElementById('go-btn');
+  const spin=document.getElementById('spin');
+  const txt=document.getElementById('btn-txt');
+  btn.disabled=true;spin.classList.add('show');txt.style.opacity='.4';
+  showSkel(user);
+
+  try{
+    let result;
+    if(plat==='x'){
+      const tok=document.getElementById('xt').value.trim();
+      if(!tok) throw new Error('Add your X Bearer Token in API Configuration ↑');
+      result=await callAPI(
+        `https://api.twitter.com/2/users/by/username/${user}?user.fields=public_metrics`,
+        {Authorization:`Bearer ${tok}`}
+      );
+    } else if(plat==='instagram'){
+      const tok=document.getElementById('it').value.trim();
+      if(!tok) throw new Error('Add your Instagram Graph API Token in API Configuration ↑');
+      // First get IG business account ID, then use business discovery
+      result=await callAPI(
+        `https://graph.facebook.com/v19.0/me?fields=instagram_business_account&access_token=${tok}`,
+        {}
+      );
+      if(result.success && result.ig_id){
+        result=await callAPI(
+          `https://graph.facebook.com/v19.0/${result.ig_id}?fields=business_discovery.as(biz){followers_count,username}&business_discovery_user=${user}&access_token=${tok}`,
+          {}
+        );
+      }
+    } else {
+      const tok=document.getElementById('ft').value.trim();
+      if(!tok) throw new Error('Add your Facebook Page Access Token in API Configuration ↑');
+      result=await callAPI(
+        `https://graph.facebook.com/v19.0/${user}?fields=followers_count,name&access_token=${tok}`,
+        {}
+      );
+    }
+
+    if(result.success) showResult(user,result.followers,null);
+    else showResult(user,null,result.error||'Unknown error from API');
+
+  } catch(e){
+    showResult(user,null,e.message);
+  }
+
+  btn.disabled=false;spin.classList.remove('show');txt.style.opacity='1';
+}
+
+document.getElementById('url-in').addEventListener('keydown',e=>{if(e.key==='Enter')doFetch()});
+</script>
+</body>
+</html>
